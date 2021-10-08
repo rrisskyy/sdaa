@@ -3,12 +3,8 @@
 
 using namespace std;	
 
-
-int main(){
-	char pil = 'o';
-	int tempInt, tempIndex;
-	string temp;
-	string name[100] = {"Reel BC Fugu Taru 17+1 Bearings System Left",
+string name[100] = {
+	"Reel BC Fugu Taru 17+1 Bearings System Left",
 	"Reel BC Lizard Lure Killer 7:2:1 Left",
 	"Reel Fugu Aojiro (6000) 10 Ball Bearings",
 	"Reel Daido Reno (4000) 6 Ball Bearings",
@@ -54,7 +50,8 @@ int main(){
 	"Daido Fastlock Snap + Kili-Kili 12pcs",
 	"Joran Iroly Beset Spin 180cm",
 	"Pioneer Fastlock Snap HS 12pcs"};
-	int price[100] = {310000,
+int price[100] = {
+	310000,
 	205000,
 	150000,
 	140000,
@@ -100,7 +97,8 @@ int main(){
 	14000,
 	100000,
 	10000};
-	string itemType[100] = {"Reel",
+string itemType[100] = {
+	"Reel",
 	"Reel",
 	"Reel",
 	"Reel",
@@ -146,7 +144,16 @@ int main(){
 	"Lainnya",
 	"Joran",
 	"Lainnya"};
-	//data versi json bisa dilihat disini https://github.com/rrisskyy/sdaa/blob/main/items.json
+//data versi json bisa dilihat disini https://github.com/rrisskyy/sdaa/blob/main/items.json
+
+void tampilBarang(int arrSize);
+int hapusBarang(int arrSize);
+
+
+int main(){
+	char pil = 'o';
+	int tempInt, tempIndex;
+	string temp;
 	    
 	int arrSize = 46;
 	while (pil != 0) {
@@ -157,27 +164,25 @@ int main(){
 		cin.ignore();
 		
 		if(pil == '1'){
-			for (int i = 0; i < arrSize; i++){
-				cout << "_id : " << i << " \nName : " <<name[i]<< " \nPrice : " << price[i]<< " \nItem Type : " <<itemType[i]<<"\n\n\n"<<endl;
-	    	}
+			tampilBarang(arrSize);
 		} else if (pil == '2'){
 			
 			cout<<"Masukkan nama barang :  ";
 			getline (cin,temp);
 			name[arrSize] = temp;
+			
 			cout<<"Masukkan harga barang :  ";
 			cin>>tempInt;
 			price[arrSize] = tempInt;
 			cin.ignore();
+			
 			cout<<"Masukkan jenis barang :  ";
 			getline (cin,temp);
 			itemType[arrSize] = temp;
 			arrSize+=1;
 			
 		} else if (pil == '3') {
-			for (int i = 0; i < arrSize; i++){
-				cout << "_id : " << i << " \nName : " <<name[i]<< " \nPrice : " << price[i]<< " \nItem Type : " <<itemType[i]<<"\n\n\n"<<endl;
-	    	};
+			tampilBarang(arrSize);
 			cout<<"Masukkan _id yang ingin anda ubah :  ";
 			cin>>tempIndex;
 			cin.ignore();
@@ -196,18 +201,27 @@ int main(){
 			itemType[tempIndex] = temp;
 			
 		} else if (pil == '4') {
-	    	int j;
-			cout<<"Masukkan _id yang ingin anda hapus :  ";
-			cin>>tempIndex;
-			cout<<"Berhasil!!\n\n\n";
-			for (int i = tempIndex; i < arrSize; i++){
-				name[i] = name[i + 1];
-				price[i] = price[i + 1];
-				itemType[i] = itemType[i + 1];
-	    	};
-	    	arrSize--;
+	    	arrSize = hapusBarang(arrSize) - 1;
 		}
 	}
+}
+
+void tampilBarang(int arrSize) {
+	for (int i = 0; i < arrSize; i++){
+		cout << "_id : " << i << " \nName : " <<name[i]<< " \nPrice : " << price[i]<< " \nItem Type : " <<itemType[i]<<"\n\n\n"<<endl;
+	}
+}
+int hapusBarang(int arrSize) {
+	int tempIndex;
+	cout<<"\n\nMasukkan _id yang ingin anda hapus :  ";
+	cin>>tempIndex;
+	cout<<"Berhasil!!\n\n\n";
+	for (int i = tempIndex; i < arrSize; i++){
+		name[i] = name[i + 1];
+		price[i] = price[i + 1];
+		itemType[i] = itemType[i + 1];
+	};	
+	return arrSize;
 }
 
 

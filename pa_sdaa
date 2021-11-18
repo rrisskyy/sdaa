@@ -1,0 +1,434 @@
+
+#include <iostream>
+#include <conio.h>
+
+
+using namespace std;
+
+struct Account {
+	
+	string _id, userName, nama, pass, email;
+};
+
+struct Node_1 {
+	struct Account data;
+	struct Node_1 *next;	
+	struct Node_1 *prev;	
+};
+
+Node_1 *head = NULL, *tail = NULL, *del;
+
+struct Game{
+	string ID, namaGame, tangalRilis;
+	int rating, stok, harga;
+};
+
+struct Node_2 {
+	struct Game data;
+	struct Node_2 *next;
+	struct Node_1 *prev;
+};
+
+Node_2 *TOP = NULL, *end = NULL, *hapus;
+
+int accountCount = 0;
+int gameCount = 0;
+
+int menuLogin();
+void auth(struct Node_1 *head, string userName, string pass);
+void menuUser();
+void menuAdmin();
+void dataGame();
+void dataUser();
+void dataHistory();
+void lihatDataUser(Node_1 *head);
+void *hapusDataUser(Node_1 *head, Node_1 *tail, string selectedID);
+void ubahDataUser( Node_1 *head, string selectedID );
+void tambahdataGamefirst(Node_2 *TOP, Node_2 *end);
+
+
+
+int main() {
+	menuLogin();
+}
+
+//verifikasi username akun user baru untuk bagian pendaftaran
+string verifikasi(Node_1 *head, string userName) {
+	if(head == NULL && userName == "admin") {
+		userName = "";
+		cout<<"Mohon maaf, \nUsername sudah terdaftar, Silahkan menggunakan Username yang lain!.\n";
+	} 
+	while ( head != NULL ) {
+		if(userName == head->data.userName || userName == "admin") {
+			userName = "";
+			cout<<"Mohon maaf, \nUsername sudah terdaftar, Silahkan menggunakan Username yang lain!.\n";
+			break;
+		}
+		head = head->next;
+	}
+	
+	return userName;
+}
+
+// fungsi untuk mendaftarkan user baru
+void addUser(Node_1 **head, Node_1 **tail, int &accountCount) {
+	string userName, pass, nama, email;
+	Node_1 *newNode = new Node_1();
+	newNode->data._id = "USER"+to_string(accountCount+1);
+	while (userName == "") {//tidak boleh kosong
+		cout<<"\n\nMasukkan Username	:  ";fflush(stdin);getline(cin, userName);	
+		//mengecek ketersediaan username
+		userName = verifikasi(*head, userName);
+		newNode->data.userName = userName;
+	}
+	while (pass == "") {//tidak boleh kosong
+		cout<<"Masukkan Password	:  ";fflush(stdin);getline(cin, pass);		
+		newNode->data.pass = pass;
+	}
+	while (nama == "") {//tidak boleh kosong
+		cout<<"Masukkan Nama		:  ";fflush(stdin);getline(cin, nama);		
+		newNode->data.nama = nama;
+	}
+	
+	while (email == "") {//tidak boleh kosong
+		cout<<"Masukkan Email		:  ";fflush(stdin);getline(cin, email);		
+		newNode->data.email = email;
+	}
+	newNode->next = NULL;
+	accountCount++;
+	if(*head == NULL) {//kalau linked list kosong
+		*head = newNode;
+		*tail = newNode;
+	} else {//kalau linked list sudah terisi
+		newNode->prev = *tail;
+		newNode->next = NULL;
+		(*tail)->next = newNode;
+		*tail = newNode;
+	}
+}
+
+
+int menuLogin() {
+	string userName, pass;
+	string pil;
+	do {
+		system("cls");
+		
+		cout<<"\n\n\n=========================================================\n";
+		cout<<"=========================TOKO GAME=======================";
+		cout<<"\n=========================================================\n\n\n\n\n";
+		cout<<"1. Login\n";
+		cout<<"2. Daftar\n";
+		cout<<"\n\n\n0. Keluar\n";
+		
+		cout<<"\nPilih Menu >> ";pil = getch();
+		if(pil == "1"){
+			cout<<"\n\nMasukkan Username 	:  ";cin>>userName;	
+			cout<<"Masukkan Password	:  ";cin>>pass;
+			auth(head, userName, pass);
+			//kalau salah!
+//			cout<<"\n\n\nPassword anda salah!!!\n\n\n"; 	
+			continue;
+		} else if (pil == "2") {
+			addUser(&head, &tail, accountCount);
+			continue;
+		} else {
+			continue;
+		}
+	} while (pil != "0");
+		
+}
+
+void menuUser() {
+	string pil;
+	do{
+		system("cls");
+		int userName, pass;
+		string pil;
+		cout<<"\n\n==================== HAI USER ==================\n\n";
+		cout<<"1. Lihat Daftar Game"<<endl;
+		cout<<"2. Cari Daftar Game"<<endl;
+		cout<<"3. Lihat Keranjang"<<endl;
+		cout<<"4. Tambah Barang Ke Keranjang"<<endl;
+		cout<<"5. Hapus Barang Di Keranjang"<<endl;
+		cout<<"6. Checkout"<<endl;
+		cout<<"7. Hubungi Admin"<<endl;
+		cout<<"8. Log Out"<<endl;
+		cout<<"\nPilih Menu >> ";pil = getch();
+		if (pil == "1") {
+			
+		} else if (pil == "2") {
+			
+		} else if (pil == "3") {
+			
+		} else if (pil == "4") {
+			
+		} else if (pil == "5") {
+			
+		} else if (pil == "6") {
+				
+		} else if (pil == "7") {
+			
+		} else if (pil == "8") {
+			return;
+		} else {
+			continue;
+		}
+	} while(pil != "8");
+		
+}
+void menuAdmin() {
+	string pil;
+	do{
+		system("cls");
+		cout<<"\n\n==================== HAI ADMIN ==================\n\n";
+		cout<<"1. Pembayaran"<<endl;
+		cout<<"2. Data Game"<<endl;
+		cout<<"3. Data User"<<endl;
+		cout<<"4. Data History"<<endl;
+		cout<<"5. Log Out"<<endl;
+		cout<<"\nPilih Menu >> ";pil = getch();
+		
+		if (pil ==  "1") {
+			//pembayaran();
+		} else if (pil ==  "2") {
+			dataGame();
+		} else if (pil ==  "3") {
+			dataUser();
+		} else if (pil ==  "4") {
+			dataHistory();
+		} else if (pil ==  "5") {
+			menuLogin();
+		} else {
+			continue;
+		}
+	} while (pil != "5");
+		
+		
+		
+}
+void dataGame() {
+	string pil;
+	do{
+		cout<<"\n\n==================== DATA GAME ==================\n\n";
+		cout<<"1. Lihat Data Game"<<endl;
+		cout<<"2. Tambah Data Game"<<endl;
+		cout<<"3. Ubah Data Game"<<endl;
+		cout<<"4. Hapus Data Game"<<endl;
+		cout<<"5. Sortir Data Game"<<endl;
+		cout<<"6. Cari Data Game"<<endl;
+		cout<<"7. Kembali"<<endl;
+		cout<<"\nPilih Menu >> ";pil = getch();
+		if (pil ==  "1") {
+			
+		} else if (pil ==  "2") {
+			
+		} else if (pil ==  "3") {
+			
+		} else if (pil ==  "4") {
+			
+		} else if (pil ==  "5") {
+			
+		} else if (pil ==  "6") {
+		
+		} else if (pil ==  "7") {
+			
+		} else {
+			continue;
+		}
+	} while(pil != "7");
+		
+}
+void dataUser() {
+	string pil, selectedID;
+	do{
+		cout<<"\n\n==================== DATA USER ==================\n\n";
+		cout<<"1. Lihat Data User"<<endl;
+		cout<<"2. Ubah Data User"<<endl;
+		cout<<"3. Hapus Data User"<<endl;
+		cout<<"4. Kembali"<<endl;
+		cout<<"\nPilih Menu >> ";pil = getch();
+		if (pil ==  "1") {
+			lihatDataUser(head);
+		} else if (pil ==  "2") {
+			lihatDataUser(head);
+			cout<<"Masukkan ID yang ingin anda ubah :  ";
+			cin>>selectedID;
+			ubahDataUser(head, selectedID);		
+		} else if (pil ==  "3") {
+			lihatDataUser(head);
+			cout<<"\n\n Masukkan ID yang ingin anda hapus:   ";
+			cin>>selectedID;
+			hapusDataUser(head, tail, selectedID);
+		} else if (pil ==  "4") {
+			
+		} else {
+			continue;
+		}
+	} while(pil != "4");		
+}
+void dataHistory() {
+	string pil;
+	do{
+		cout<<"\n\n==================== DATA HISTORY ==================\n\n";
+		cout<<"1. Lihat History Penjualan"<<endl;
+		cout<<"2. Hapus History Penjualan"<<endl;
+		cout<<"3. Kembali";
+		cout<<"\nPilih Menu >> ";pil = getch();
+		if (pil ==  "1") {
+			
+		} else if (pil ==  "2") {
+			
+		} else if (pil ==  "3") {
+			
+		} else {
+			continue;
+		}
+	} while(pil != "3");
+		
+}
+
+void auth(struct Node_1 *head, string userName, string pass) {
+	if(userName == "admin" and pass == "admin")	{
+		menuAdmin();
+	} else {
+		if(head == NULL) {
+			cout<<"\n\n\nLinked List masih kosong!\n\n\n"; 	
+		}
+		while (head != NULL) {	
+			if (head->data.nama == userName && head->data.pass == pass) {
+				menuUser();
+			}
+		}
+	}
+	
+}
+
+void lihatDataUser(struct Node_1 *head){
+	if (head == NULL) {
+		cout << "\nData Masih Kosong !!\n\n ";
+		return;
+	} else {
+		cout << "\nData: " << "\n\n";
+		while ( head != NULL ) {
+			cout << "ID		: " << head->data._id << endl;
+			cout << "Nama		: " << head->data.nama << endl;
+			cout << "Username	: " << head->data.userName << endl;
+			cout << "Passowrd	: " << head->data.pass << endl;
+			cout << "Email		: " << head->data.email << "\n\n";
+			head = head->next;
+		}
+	}
+}
+
+void lihatDataSatuUser( Node_1 *head, string selectedID ) {
+	if (head == NULL) {
+		cout << "\nData Masih Kosong !!\n\n ";
+		return;
+	} else {
+		while ( head != NULL ) {
+			if (head->data._id == selectedID) {
+				cout<< "\n\n\nBerikut Adalah Data User yang ingin anda ubah: \n";
+				cout<< "\nID		: "<<head->data._id << "\n";
+				cout<< "Nama		: "<<head->data.nama << "\n";
+				cout<< "Username	: "<<head->data.userName<<"\n";
+				cout<< "Password	: "<<head->data.pass<< "\n";
+			}
+			head = head->next;
+		}
+	}
+}
+
+void ubahDataUser( Node_1 *head, string selectedID ) {
+    Node_1 *nodeBaru = new Node_1();
+    
+	nodeBaru = head;
+	while (nodeBaru != NULL) {
+		char pil;
+		bool repeat = true;
+        if (nodeBaru->data._id == selectedID) {
+        	do {
+        		system("cls");
+        		lihatDataSatuUser(head, selectedID);
+        		cout << "\n\n+==============================+" << endl;
+	        	cout << "1. Ubah Nama"<<endl;
+	        	cout << "2. Ubah Password"<<endl;
+	        	cout << "3. Ubah Email"<<endl;
+	        	cout << "\nPilih Menu: ";pil = getch();
+	        	if(pil == '1') {
+	        		cout<<"\n\nMasukkan Nama Baru  :  " ;	fflush(stdin);getline(cin,nodeBaru->data.nama);	
+	        		repeat = false;
+				} else if (pil == '2') {
+					cout<<"\n\nMasukkan Password Baru :  "; 	cin>>nodeBaru->data.pass;	
+					repeat = false;
+				} else if (pil == '3') {
+					cout<<"\n\nMasukkan Alamat Baru :  "; 	cin>>nodeBaru->data.pass;
+					repeat = false;	
+				} else {
+					continue;
+				}
+			} while(repeat);
+        }        
+		nodeBaru = nodeBaru -> next;
+	}
+	cout << "\n\nBerhasil!!!\n\n\n\n" << endl;
+}
+
+
+
+
+void *hapusDataUser(Node_1 *head, Node_1 *tail, string selectedID) {
+	
+	Node_1 *temp;
+	if (head == NULL) {
+		cout << "List Kosong" << endl;
+	}
+	
+	//	di logika didalam while itu kita tidak bisa menghapus elemen pertama, karena 
+	//	dari awal itu sudah mengecek data ke 2, jadi bisa diakali dengan menambah 1 kondisi
+	//	dimana headnya itu sama dengan pil, kalau sama langsung hapus
+	if (head->data._id == selectedID) {
+		del = head;
+		head = head->next;
+		head->prev = NULL;
+		delete del;
+    }
+	
+	temp = head; 
+    while (temp -> next != NULL) {
+        if (temp->next->data._id == selectedID) {
+            del = temp -> next;
+            temp->next = del->next;
+            free(del);
+        }
+        temp = temp->next;
+    }
+    return head;
+}
+
+
+
+void lihatdataGame(Node_2 *TOP){
+	if (TOP == NULL) {
+		cout << "\nData Masih Kosong !! " << endl << endl;
+		return;
+	} else {
+		cout << "\nData Game : " << endl;
+		while ( TOP != NULL ) {
+			cout << "ID				: " << TOP->data.ID << endl;
+			cout << "Nama Game  	: " << TOP->data.namaGame << endl << endl;
+			cout << "Tanggal Rilis	: " << TOP->data.tangalRilis << endl << endl;
+			cout << "Rating			: " << TOP->data.rating << endl << endl;
+			cout << "Stok			: " << TOP->data.stok << endl << endl;
+			cout << "Harga			: " << TOP->data.harga << endl << endl;
+			TOP = TOP->next;
+		}
+	}
+}
+
+//void tambahdataGamefirst(Node_2 *TOP, Node_2 *end){
+//	Node_2 *newGame = new Node_2();
+//	
+//	
+//}
+

@@ -1,5 +1,7 @@
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <conio.h>
 
 
@@ -23,34 +25,112 @@ struct Game{
 	int rating, stok, harga;
 };
 
+//ini array sementara untuk nyimpan data gamenya, jadi ini nanti di convert dari array ke linked list
+Game games[100];
+
+
 struct Node_2 {
 	struct Game data;
 	struct Node_2 *next;
 	struct Node_1 *prev;
 };
 
-Node_2 *TOP = NULL, *end = NULL, *hapus;
+Node_2 *TOP = NULL, *END = NULL, *del_2;
 
-int accountCount = 0;
+int accountCount = 0, pkAccount = 0;
 int gameCount = 0;
 
-int menuLogin();
+
+
+
+
+void csvToList(Node_2 **TOP, Node_2 **END, int &gameCount);
+void convertArrToList(Node_2 **TOP, Game games);
+
 void auth(struct Node_1 *head, string userName, string pass);
+void menuLogin();
 void menuUser();
 void menuAdmin();
+
 void dataGame();
 void dataUser();
 void dataHistory();
+
 void lihatDataUser(Node_1 *head);
 void *hapusDataUser(Node_1 *head, Node_1 *tail, string selectedID);
 void ubahDataUser( Node_1 *head, string selectedID );
-void tambahdataGamefirst(Node_2 *TOP, Node_2 *end);
+
+void lihatDataGame(Node_2 *TOP);
+void tambahDataGamefirst(Node_2 *TOP, Node_2 *end);
 
 
 
 int main() {
+	//masukkan data csv ke linked list
+	csvToList(&TOP, &END, gameCount);
+
+	//login 
 	menuLogin();
 }
+
+void csvToList(Node_2 **TOP, Node_2 **END, int &gameCount) {
+	
+	Node_2 *newNode;
+	
+	ifstream input("game.csv");
+	string line, text;
+	int i;
+	string arr[60];
+	while(getline(input, line)){
+		std::stringstream ss(line);
+		while(getline(ss, text, ',')){
+			arr[i] = text;
+			i++;
+		}
+		gameCount++;
+	}
+	for ( i = 0; i<gameCount; i++ ) {
+		//karena ini ada 6 kolom, maka dikali 6, jadi ketemu lagi di kolom yg sama di kelipatan 6
+		games[i].ID = arr[0+i*6];
+		games[i].namaGame = arr[(i*6)+1];
+		games[i].tangalRilis = arr[2+i*6];
+		games[i].rating = stoi(arr[3+i*6]);
+		games[i].stok = stoi(arr[4+i*6]);
+		games[i].harga = stoll(arr[5+i*6]);	
+	} 
+	for (int i = 0; i <gameCount; i++){
+		convertArrToList(TOP, games[i]);
+	}
+		
+	
+}
+
+	
+//fungsi ini untuk ngubah array awal jadi list.	
+void convertArrToList(Node_2 **TOP, Game games) {
+	Node_2 *temp = new Node_2;
+	Node_2 *ptr;
+	temp->data.ID = games.ID;
+	temp->data.namaGame = games.namaGame;
+	temp->data.tangalRilis = games.tangalRilis;
+	temp->data.rating = games.rating;
+	temp->data.stok = games.stok;
+	temp->data.harga = games.harga;
+	
+	temp->data.stok = games.stok;
+	temp->next = NULL;
+
+	if (*TOP == NULL) *TOP = temp;
+	else {
+		ptr = *TOP;
+		while (ptr->next != NULL){
+			ptr = ptr->next;
+		}
+		ptr->next = temp;
+	}
+}
+
+
 
 //verifikasi username akun user baru untuk bagian pendaftaran
 string verifikasi(Node_1 *head, string userName) {
@@ -74,7 +154,7 @@ string verifikasi(Node_1 *head, string userName) {
 void addUser(Node_1 **head, Node_1 **tail, int &accountCount) {
 	string userName, pass, nama, email;
 	Node_1 *newNode = new Node_1();
-	newNode->data._id = "USER"+to_string(accountCount+1);
+	newNode->data._id = "USER"+to_string(pkAccount+1);
 	while (userName == "") {//tidak boleh kosong
 		cout<<"\n\nMasukkan Username	:  ";fflush(stdin);getline(cin, userName);	
 		//mengecek ketersediaan username
@@ -95,7 +175,7 @@ void addUser(Node_1 **head, Node_1 **tail, int &accountCount) {
 		newNode->data.email = email;
 	}
 	newNode->next = NULL;
-	accountCount++;
+	accountCount++;pkAccount++;
 	if(*head == NULL) {//kalau linked list kosong
 		*head = newNode;
 		*tail = newNode;
@@ -108,7 +188,7 @@ void addUser(Node_1 **head, Node_1 **tail, int &accountCount) {
 }
 
 
-int menuLogin() {
+void menuLogin() {
 	string userName, pass;
 	string pil;
 	do {
@@ -220,7 +300,7 @@ void dataGame() {
 		cout<<"7. Kembali"<<endl;
 		cout<<"\nPilih Menu >> ";pil = getch();
 		if (pil ==  "1") {
-			
+			lihatDataGame(TOP);
 		} else if (pil ==  "2") {
 			
 		} else if (pil ==  "3") {
@@ -408,25 +488,27 @@ void *hapusDataUser(Node_1 *head, Node_1 *tail, string selectedID) {
 
 
 
-void lihatdataGame(Node_2 *TOP){
+void lihatDataGame(Node_2 *TOP){
 	if (TOP == NULL) {
 		cout << "\nData Masih Kosong !! " << endl << endl;
 		return;
 	} else {
 		cout << "\nData Game : " << endl;
 		while ( TOP != NULL ) {
-			cout << "ID				: " << TOP->data.ID << endl;
-			cout << "Nama Game  	: " << TOP->data.namaGame << endl << endl;
-			cout << "Tanggal Rilis	: " << TOP->data.tangalRilis << endl << endl;
-			cout << "Rating			: " << TOP->data.rating << endl << endl;
-			cout << "Stok			: " << TOP->data.stok << endl << endl;
-			cout << "Harga			: " << TOP->data.harga << endl << endl;
+			cout << "\n\nID		: " << TOP->data.ID << endl;
+			cout << "Nama Game  	: " << TOP->data.namaGame << endl;
+			cout << "Tanggal Rilis	: " << TOP->data.tangalRilis << endl;
+			cout << "Rating		: " << TOP->data.rating << endl;
+			cout << "Stok		: " << TOP->data.stok << endl;
+			cout << "Harga		: " << TOP->data.harga << endl;
 			TOP = TOP->next;
 		}
 	}
 }
 
-//void tambahdataGamefirst(Node_2 *TOP, Node_2 *end){
+
+
+//void tambahDataGamefirst(Node_2 *TOP, Node_2 *end){
 //	Node_2 *newGame = new Node_2();
 //	
 //	

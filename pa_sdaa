@@ -21,7 +21,7 @@ struct Node_1 {
 Node_1 *head = NULL, *tail = NULL, *del;
 
 struct Game{
-	string ID, namaGame, tangalRilis;
+	string ID, namaGame, tanggalRilis;
 	int rating, stok, harga;
 };
 
@@ -32,12 +32,12 @@ Game games[100];
 struct Node_2 {
 	struct Game data;
 	struct Node_2 *next;
-	struct Node_1 *prev;
+	struct Node_2 *prev;
 };
 
 Node_2 *TOP = NULL, *END = NULL, *del_2;
 
-int accountCount = 0, pkAccount = 0;
+int accountCount = 0;
 int gameCount = 0;
 
 
@@ -61,7 +61,7 @@ void *hapusDataUser(Node_1 *head, Node_1 *tail, string selectedID);
 void ubahDataUser( Node_1 *head, string selectedID );
 
 void lihatDataGame(Node_2 *TOP);
-void tambahDataGamefirst(Node_2 *TOP, Node_2 *end);
+void addDataGamefirst(Node_2 **TOP, Node_2 **END, int &gameCount);
 
 
 
@@ -92,11 +92,11 @@ void csvToList(Node_2 **TOP, Node_2 **END, int &gameCount) {
 	for ( i = 0; i<gameCount; i++ ) {
 		//karena ini ada 6 kolom, maka dikali 6, jadi ketemu lagi di kolom yg sama di kelipatan 6
 		games[i].ID = arr[0+i*6];
-		games[i].namaGame = arr[(i*6)+1];
-		games[i].tangalRilis = arr[2+i*6];
+		games[i].namaGame = arr[1+i*6];
+		games[i].tanggalRilis = arr[2+i*6];
 		games[i].rating = stoi(arr[3+i*6]);
 		games[i].stok = stoi(arr[4+i*6]);
-		games[i].harga = stoll(arr[5+i*6]);	
+		games[i].harga = stoll(arr[5+i*6]);
 	} 
 	for (int i = 0; i <gameCount; i++){
 		convertArrToList(TOP, games[i]);
@@ -112,7 +112,7 @@ void convertArrToList(Node_2 **TOP, Game games) {
 	Node_2 *ptr;
 	temp->data.ID = games.ID;
 	temp->data.namaGame = games.namaGame;
-	temp->data.tangalRilis = games.tangalRilis;
+	temp->data.tanggalRilis = games.tanggalRilis;
 	temp->data.rating = games.rating;
 	temp->data.stok = games.stok;
 	temp->data.harga = games.harga;
@@ -154,7 +154,7 @@ string verifikasi(Node_1 *head, string userName) {
 void addUser(Node_1 **head, Node_1 **tail, int &accountCount) {
 	string userName, pass, nama, email;
 	Node_1 *newNode = new Node_1();
-	newNode->data._id = "USER"+to_string(pkAccount+1);
+	newNode->data._id = "USER"+to_string(accountCount+1);
 	while (userName == "") {//tidak boleh kosong
 		cout<<"\n\nMasukkan Username	:  ";fflush(stdin);getline(cin, userName);	
 		//mengecek ketersediaan username
@@ -175,7 +175,7 @@ void addUser(Node_1 **head, Node_1 **tail, int &accountCount) {
 		newNode->data.email = email;
 	}
 	newNode->next = NULL;
-	accountCount++;pkAccount++;
+	accountCount++;
 	if(*head == NULL) {//kalau linked list kosong
 		*head = newNode;
 		*tail = newNode;
@@ -302,7 +302,7 @@ void dataGame() {
 		if (pil ==  "1") {
 			lihatDataGame(TOP);
 		} else if (pil ==  "2") {
-			
+			addDataGamefirst(&TOP, &END, gameCount);
 		} else if (pil ==  "3") {
 			
 		} else if (pil ==  "4") {
@@ -497,7 +497,7 @@ void lihatDataGame(Node_2 *TOP){
 		while ( TOP != NULL ) {
 			cout << "\n\nID		: " << TOP->data.ID << endl;
 			cout << "Nama Game  	: " << TOP->data.namaGame << endl;
-			cout << "Tanggal Rilis	: " << TOP->data.tangalRilis << endl;
+			cout << "Tanggal Rilis	: " << TOP->data.tanggalRilis << endl;
 			cout << "Rating		: " << TOP->data.rating << endl;
 			cout << "Stok		: " << TOP->data.stok << endl;
 			cout << "Harga		: " << TOP->data.harga << endl;
@@ -508,9 +508,65 @@ void lihatDataGame(Node_2 *TOP){
 
 
 
-//void tambahDataGamefirst(Node_2 *TOP, Node_2 *end){
-//	Node_2 *newGame = new Node_2();
-//	
-//	
-//}
+// fungsi untuk mendaftarkan game baru
+void addDataGamefirst(Node_2 **TOP, Node_2 **END, int &gameCount) {
+	string ID, namaGame, tanggalRilis;
+	int rating = 0;
+	int stok = 0;
+	int harga = 0;
+	Node_2 *newGame= new Node_2();
+	
+	while (ID == "") {//tidak boleh kosong
+		cout<<"\n\nMasukkan ID Game	:  ";fflush(stdin);getline(cin, ID);	
+		newGame->data.ID = ID;
+	}
+	while (namaGame == "") {//tidak boleh kosong
+		cout<<"\nMasukkan Nama Game	:  ";fflush(stdin);getline(cin, namaGame);	
+		newGame->data.namaGame = namaGame;
+	}
+	while ( tanggalRilis== "") {//tidak boleh kosong
+		cout<<"Masukkan Tanggal Rilis	:  ";fflush(stdin);getline(cin, tanggalRilis);		
+		newGame->data.tanggalRilis= tanggalRilis;
+	}
+	while (rating == 0) {//tidak boleh kosong
+		cout << "Masukan Rating  : "; cin >> rating;
+		newGame->data.rating = rating;	
+		
+	}
+	while (stok == 0) {//tidak boleh kosong
+		cout << "Masukan Stok  : "; cin >> stok;
+		newGame->data.stok = stok;		
+		
+	}
+	while (harga == 0) {//tidak boleh kosong
+		cout << "Masukan Harga : "; cin >> harga;
+		newGame->data.harga = harga;	
+		
+	}
+
+	newGame->next = *TOP;
+	accountCount++;
+	if(*TOP == NULL) {//kalau linked list kosong
+		*TOP = newGame;
+		*END = newGame;
+	} else {//kalau linked list sudah terisi
+		newGame->prev = NULL;
+		newGame->next = *TOP;
+		(*TOP)->prev = newGame;
+		*TOP = newGame;
+	}
+	
+}
+
+
+void ubahDataGame(Node_2 *TOP, string selectedID) {
+	
+}
+
+void *hapusDataUser(Node_2 *TOP, Node_2 *END, string SelectedID){
+	
+}
+	
+
+
 

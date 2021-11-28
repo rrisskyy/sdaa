@@ -3,9 +3,12 @@
 #include <fstream>
 #include <sstream>
 #include <conio.h>
-
+#include <ctime>
+#include <math.h> 
 
 using namespace std;
+
+
 
 
 struct Keranjang {
@@ -44,51 +47,61 @@ struct Node_2 {
 Node_2 *TOP = NULL, *END = NULL, *del_2;
 
 struct History {
-	string ID, nama, tanggalBeli;
+	string idPembelian, userName, tanggalBeli;
 	int totalHarga;
 };
 
 struct Node_3 {
 	struct History data;
-	struct Node_2 *next;
-	struct Node_2 *prev;
+	struct Node_3 *next;
 };
 
-Node_3 *FRONT = NULL, *del_3;
+Node_3 *FRONT = NULL, *BACK = NULL, *del_3;
 
 int accountCount = 0;
 int gameCount = 0;
+int historyCount = 0;
 
 
 
 
 void hubungiAdmin();
 void csvToList(Node_2 **TOP, Node_2 **END, int &gameCount);
+void convertListToArr( Node_2 **TOP, Game *games );
 void convertArrToList(Node_2 **TOP, Game games);
 
 void auth(struct Node_1 *head, string userName, string pass);
 void menuLogin();
-void menuUser(string userName, string pass);
+void menuUser(string userName);
 void menuAdmin();
+void menuSort();
 
 void dataGame();
 void dataUser();
 void dataHistory();
 
+void addUser(Node_1 **head, Node_1 **tail, int &accountCount);
 void lihatDataUser(Node_1 *head);
-void *hapusDataUser(Node_1 *head, Node_1 *tail, string selectedID);
 void ubahDataUser( Node_1 *head, string selectedID );
+Node_1 *hapusDataUser(Node_1 *head, Node_1 *tail, string selectedID);
 
 void lihatDataGame(Node_2 *TOP);
 void lihatDataSatuGame( Node_2 *TOP, string SelectedID );
 void addDataGamefirst(Node_2 **TOP, Node_2 **END, int &gameCount);
 void ubahDataGame(Node_2 *TOP, string SelectedID);
 Node_2 *hapusDataGame(Node_2 *TOP, Node_2 *END, string SelectedID);
+void shellSort( Game *games, int &arrSize, string orderItem, string orderMethod );
+int jumpSearch(Game *arr, string x, int n);
+void lihatDataSatuGameArr( Game *games );
 
-//user
+//menu user
 void lihatKeranjang(Node_1 *head, Node_2 *TOP, string userName);
 void tambahKeranjang(Node_1 *head, Node_2 *TOP, string userName);
 void hapusIsiKeranjang (Node_1 *head, Node_2 *TOP, string userName);
+void checkout( Node_1 *head, Node_2 *TOP, Node_3 **FRONT, string userName );
+void lihatHistory(Node_3 *FRONT);
+
+
 
 int main() {
 	//masukkan data csv ke linked list
@@ -97,6 +110,18 @@ int main() {
 	//login 
 	menuLogin();
 }
+
+
+
+string timeNow() {
+	string currTime;
+	time_t now = time(0);
+	tm *ltm = localtime(&now);
+	currTime = to_string(1900+ltm->tm_year) + '/' + to_string(1+ltm->tm_mon) + '/' + to_string(ltm->tm_mday);
+	return currTime;
+}
+
+
 
 void csvToList(Node_2 **TOP, Node_2 **END, int &gameCount) {
 	
@@ -129,6 +154,24 @@ void csvToList(Node_2 **TOP, Node_2 **END, int &gameCount) {
 		
 	
 }
+
+
+
+void convertListToArr( Node_2 **TOP, Game *games ) {
+	int index = 0;
+	Node_2 *temp = *TOP;
+	while (temp != NULL) {
+		games[index].ID = temp->data.ID;
+		games[index].namaGame = temp->data.namaGame;
+		games[index].tanggalRilis = temp->data.tanggalRilis;
+		games[index].rating = temp->data.rating;
+		games[index].stok = temp->data.stok;
+		games[index].harga = temp->data.harga;
+		index++;
+		temp = temp->next;
+	}
+}
+
 
 	
 //fungsi ini untuk ngubah array awal jadi list.	
@@ -175,6 +218,8 @@ string verifikasi(Node_1 *head, string userName) {
 	return userName;
 }
 
+
+
 // fungsi untuk mendaftarkan user baru
 void addUser(Node_1 **head, Node_1 **tail, int &accountCount) {
 	string userName, pass, nama, email;
@@ -213,6 +258,7 @@ void addUser(Node_1 **head, Node_1 **tail, int &accountCount) {
 }
 
 
+
 void menuLogin() {
 	string userName, pass;
 	string pil;
@@ -243,6 +289,9 @@ void menuLogin() {
 	} while (pil != "0");
 		
 }
+
+
+
 //menggunakan parameter username untuk mengetahui siapa yg login
 void menuUser(string userName) {
 	string pil;
@@ -270,7 +319,7 @@ void menuUser(string userName) {
 		} else if (pil == "5") {
 			hapusIsiKeranjang(head, TOP, userName);
 		} else if (pil == "6") {
-				
+			checkout(head, TOP, &FRONT, userName);
 		} else if (pil == "7") {
 			hubungiAdmin();
 		} else if (pil == "8") {
@@ -282,6 +331,9 @@ void menuUser(string userName) {
 	} while(pil != "8");
 		
 }
+
+
+
 void menuAdmin() {
 	string pil;
 	do{
@@ -308,10 +360,40 @@ void menuAdmin() {
 			continue;
 		}
 	} while (pil != "5");
-		
-		
-		
 }
+
+
+
+void menuSort() {
+	string orderItem, orderMethod;
+	bool repeat=true;
+	cout<<"\n\n==================== MENU SORT ==================\n\n";
+	cout<<"1. Sorting Berdasarkan Harga"<<endl;
+	cout<<"2. Sorting Berdasarkan Tanggal Rilis"<<endl;
+	cout<<"3. Sorting Berdasarkan Nama"<<endl;
+	cout<<"\nPilih Menu >> ";orderItem = getch();
+	while(repeat) {
+		if(orderItem == "1" || orderItem=="2" || orderItem=="3") {
+			cout<<"\n\n1. Ascending"<<endl;
+			cout<<"2. Descending"<<endl;
+			cout<<"\nPilih Menu >> ";orderMethod = getch();
+			convertListToArr(&TOP, &games[0]);
+			shellSort(&games[0], gameCount, orderItem, orderMethod);	
+			TOP=NULL;
+			for (int i = 0; i < gameCount; i++){
+				convertArrToList(&TOP, games[i]);
+			}
+			repeat=false;
+			cout<<"\n\nBerhasil!!\n\n";
+			lihatDataGame(TOP);
+		} else {
+			continue;
+		}
+	}
+}
+
+
+
 void dataGame() {
 	string pil, SelectedID;
 	do{
@@ -339,9 +421,20 @@ void dataGame() {
 			cin>>SelectedID;
 			TOP = hapusDataGame(TOP, END, SelectedID);
 		} else if (pil ==  "5") {
-			
+			menuSort();
 		} else if (pil ==  "6") {
-		
+			cout<<" \n\n== Search Berdasarkan ID Barang ==\n\n "<<endl;
+			cout<<"\n\n Masukkan ID game yang ingin anda cari:   ";
+			cin>>SelectedID;
+			
+			convertListToArr(&TOP, &games[0]);
+			shellSort(&games[0], gameCount, "4", "1");	
+			int res = jumpSearch(&games[0], SelectedID, gameCount);
+			lihatDataSatuGameArr( &games[res] );
+			TOP=NULL;
+			for (int i = 0; i < gameCount; i++){
+				convertArrToList(&TOP, games[i]);
+			};
 		} else if (pil ==  "7") {
 			
 		} else {
@@ -350,6 +443,9 @@ void dataGame() {
 	} while(pil != "7");
 		
 }
+
+
+
 void dataUser() {
 	string pil, selectedID;
 	do{
@@ -368,9 +464,9 @@ void dataUser() {
 			ubahDataUser(head, selectedID);		
 		} else if (pil ==  "3") {
 			lihatDataUser(head);
-			cout<<"\n\n Masukkan ID yang ingin anda hapus:   ";
+			cout<<"\n\n Masukkan ID User yang ingin anda hapus:   ";
 			cin>>selectedID;
-			hapusDataUser(head, tail, selectedID);
+			head = hapusDataUser(head, tail, selectedID);
 		} else if (pil ==  "4") {
 			
 		} else {
@@ -378,6 +474,9 @@ void dataUser() {
 		}
 	} while(pil != "4");		
 }
+
+
+
 void dataHistory() {
 	string pil;
 	do{
@@ -387,10 +486,8 @@ void dataHistory() {
 		cout<<"3. Kembali";
 		cout<<"\nPilih Menu >> ";pil = getch();
 		if (pil ==  "1") {
-			
+			lihatHistory(FRONT);
 		} else if (pil ==  "2") {
-			
-		} else if (pil ==  "3") {
 			
 		} else {
 			continue;
@@ -398,6 +495,8 @@ void dataHistory() {
 	} while(pil != "3");
 		
 }
+
+
 
 void auth(struct Node_1 *head, string userName, string pass) {
 	if(userName == "admin" and pass == "admin")	{
@@ -416,6 +515,8 @@ void auth(struct Node_1 *head, string userName, string pass) {
 	
 }
 
+
+
 void lihatDataUser(struct Node_1 *head){
 	if (head == NULL) {
 		cout << "\nData Masih Kosong !!\n\n ";
@@ -432,6 +533,8 @@ void lihatDataUser(struct Node_1 *head){
 		}
 	}
 }
+
+
 
 void lihatDataSatuUser( Node_1 *head, string selectedID ) {
 	if (head == NULL) {
@@ -450,6 +553,8 @@ void lihatDataSatuUser( Node_1 *head, string selectedID ) {
 		}
 	}
 }
+
+
 
 void ubahDataUser( Node_1 *head, string selectedID ) {
     Node_1 *nodeBaru = new Node_1();
@@ -491,30 +596,41 @@ void ubahDataUser( Node_1 *head, string selectedID ) {
 
 
 
-
-void *hapusDataUser(Node_1 *head, Node_1 *tail, string selectedID) {
-	
+//Fungsi Hapus game bertipe data struct jadi ini kembaliannya nanti berupa Struct.
+Node_1 *hapusDataUser(Node_1 *head, Node_1 *tail, string selectedID){
+	//Buat Struct temp untuk perulangan nanti
 	Node_1 *temp;
 	if (head == NULL) {
-		cout << "List Kosong" << endl;
-	}
+		cout << "User Tidak ada!!" << endl;
+ 	}
 	
 	//	di logika didalam while itu kita tidak bisa menghapus elemen pertama, karena 
 	//	dari awal itu sudah mengecek data ke 2, jadi bisa diakali dengan menambah 1 kondisi
 	//	dimana headnya itu sama dengan pil, kalau sama langsung hapus
-	if (head->data._id == selectedID) {
-		del = head;
-		head = head->next;
-		head->prev = NULL;
-		delete del;
+	//  trus setelah dihapus, di kembalikan structnya. (yang sudah dihapus elemennya)
+	if (head->data._id == selectedID) {		
+		//karena ini Posisi head nya adalah elemen yang mau dihapus, jadi langsung arahkan saja TOPnya ke alamat selanjutnya
+        head = head->next;
+        head->prev = NULL;
+        //free kita menghemat memory karena del_2 sudah tidak terpakai, fungsinya sama seperti delete
+        free(del);  
+        return head;
     }
-	
-	temp = head; 
+    //masukkan nilai dari head ke temp
+    temp = head;
+    //Ulangi sampai next dari temp itu NULL
     while (temp -> next != NULL) {
+    	// kalau dalam perulangan itu alamat selanjutnya memiliki data._id yang mau kita hapus
         if (temp->next->data._id == selectedID) {
+        	//del_1 nya itu menyimpan dari alamat next variable temp
+        	//misalnya saat ini berada di alamat pertama, maka del_2 menyimpan alamat kedua:
             del = temp -> next;
+            //setelah itu alamat next dari temp itu menyimpan alamat next dari variable del
+            //misalnya saat ini berada di alamat pertama, maka yang seharusnya temp->next itu menyimpan alamat kedua, jadi menyimpan alamat ketiga
             temp->next = del->next;
+            //free kita menghemat memory karena del_2 sudah tidak terpakai, fungsinya sama seperti delete
             free(del);
+            return head;
         }
         temp = temp->next;
     }
@@ -541,6 +657,15 @@ void lihatDataGame(Node_2 *TOP){
 	}
 }
 
+void lihatDataSatuGameArr( Game *games ) {
+		cout << "\n\nID		: " << games->ID << endl;
+		cout << "Nama Game  	: " << games->namaGame << endl;
+		cout << "Tanggal Rilis	: " << games->tanggalRilis << endl;
+		cout << "Rating		: " << games->rating << endl;
+		cout << "Stok		: " << games->stok << endl;
+		cout << "Harga		: " << games->harga << endl;
+}
+
 void lihatDataSatuGame( Node_2 *TOP, string selectedID ) {
 	if (TOP == NULL) {
 		cout << "\nData Masih Kosong !!\n\n ";
@@ -559,6 +684,8 @@ void lihatDataSatuGame( Node_2 *TOP, string selectedID ) {
 		}
 	}
 }
+
+
 
 // fungsi untuk mendaftarkan game baru
 void addDataGamefirst(Node_2 **TOP, Node_2 **END, int &gameCount) {
@@ -610,6 +737,8 @@ void addDataGamefirst(Node_2 **TOP, Node_2 **END, int &gameCount) {
 	
 }
 
+
+
 void ubahDataGame(Node_2 *TOP, string selectedID) {
 	Node_2 *nodeBaru = new Node_2();
     
@@ -657,6 +786,8 @@ void ubahDataGame(Node_2 *TOP, string selectedID) {
 	}
 }
 
+
+
 //Fungsi Hapus game bertipe data struct jadi ini kembaliannya nanti berupa Struct.
 Node_2 *hapusDataGame(Node_2 *TOP, Node_2 *END, string SelectedID){
 	//Buat Struct temp untuk perulangan nanti
@@ -698,7 +829,6 @@ Node_2 *hapusDataGame(Node_2 *TOP, Node_2 *END, string SelectedID){
     return TOP;
 }
 
-//void sortirDataGame
 
 //void cariDataGame
 
@@ -740,11 +870,14 @@ void lihatKeranjang( Node_1 *head,  Node_2 *TOP, string userName) {
 		break;
 		}
 		head = head->next;	
-		
 	}
 }
 
+
+
 void tambahKeranjang( Node_1 *head, Node_2 *TOP, string userName ) {
+	Node_2 *temp = new Node_2;
+	temp = TOP;
 	while (head != NULL) {
 		//kita memilih ini user mana yang punya keranjangnya	
 		if (head->data.userName == userName) {
@@ -753,16 +886,22 @@ void tambahKeranjang( Node_1 *head, Node_2 *TOP, string userName ) {
 			lihatDataGame(TOP);
 			cout<<"\n\nMasukkan ID Game >>>  ";
 			cin>>selectedID;	
-			//nah kita masukkan data inputan tadi kedalam array keranjang
-			head->data.isiKeranjang[head->data.jumlahKeranjang] = selectedID;
+			//nah kita masukkan data inputan tadi kedalam array keranjang tapi pastikan dulu kalau item tersebut ada didalam daftar game
 			//karna isi keranjangnya bertambah, kita tambah juga ini
-			head->data.jumlahKeranjang++;			
+			while (TOP != NULL) {
+				if (TOP->data.ID == selectedID){
+					head->data.isiKeranjang[head->data.jumlahKeranjang] = selectedID;
+					head->data.jumlahKeranjang++;
+				} TOP = TOP->next;	
+			}
 			break;
 		}
 		head = head->next;	
 		
 	}
 }
+
+
 
 void hapusIsiKeranjang( Node_1 *head, Node_2 *TOP, string userName ) {
 	while (head != NULL) {
@@ -772,15 +911,18 @@ void hapusIsiKeranjang( Node_1 *head, Node_2 *TOP, string userName ) {
 			lihatKeranjang(head, TOP, userName);
 			cout<<"\n\nMasukkan ID Game >>>  ";
 			cin>>selectedID;	
-			for (int i = 0; i < head->data.jumlahKeranjang++; i++) {
+			for (int i = 0; i < head->data.jumlahKeranjang; i++) {
 				//kalau data yang dihapus itu ada didalam array
 				if (head->data.isiKeranjang[i] == selectedID){
 					//kita timpa elemen yang mau kita hapus dengan elemen selanjutnya
 					//lanjut terus begitu sampai index tarakhir
-					head->data.isiKeranjang[i] = head->data.isiKeranjang[i+1];
-					break;
+					for (int j = i; j < head->data.jumlahKeranjang; j++) {
+						head->data.isiKeranjang[j] = head->data.isiKeranjang[j+1];
+					}
+					head->data.jumlahKeranjang--;
 				}
 			}
+			
 			cout<<"\n\nBerhasil!!! ";
 			break;
 		}
@@ -788,32 +930,152 @@ void hapusIsiKeranjang( Node_1 *head, Node_2 *TOP, string userName ) {
 	}
 }
 
-void checkout() {
-	//cout << "\n\n Apakah Anda Yakin Membeli Game Ini?"
-		//while (head != NULL) {
-		//kita memilih ini user mana yang punya keranjangnya	
-		//if (head->data.userName == userName) {
-			//string selectedID;
-			//print dulu data gamenya baru suruh user masukkan ke keranjang
-			//lihatKeranjang(head, TOP, userName);
-			//cout<<"\n\nYa/Tidak >>>  ";	
-			//kita masukkan data dari array keranjang ke data history
-			//FRONT->data->data.isiKeranjang[head->data.jumlahKeranjang] = selectedID;
-			//karna isi keranjangnya bertambah, kita tambah juga ini
-			//head->data.jumlahKeranjang++;			
-			//break;
-		//} else {
-			//kalau masih belum ketemu kita next
-			//head = head->next;	
+
+
+void checkout( Node_1 *head, Node_2 *TOP, Node_3 **BACK, string userName ) {
+	char pil;
+	bool repeat=true;
+	int totalBayar;
+	Node_2 *temp = new Node_2;
+	temp = TOP;
+	while (head != NULL) {	
+		if (head->data.userName == userName) {
+			for(int i = 0; i < head->data.jumlahKeranjang; i++){
+				while(TOP != NULL) {
+					if(head->data.isiKeranjang[i] == TOP->data.ID) {
+						lihatKeranjang(head, TOP, userName);
+						totalBayar += TOP->data.harga;
+						TOP->data.stok--;
+						TOP = temp;
+						break;
+					}
+					TOP = TOP->next;		
+				}
+			}
 		}
+		head = head->next;	
+	}
+	while(repeat) {
+		cout<<"\n\n\nJumlah yang perlu anda bayarkan untuk semua game ini adalah: Rp."<<totalBayar<<"\n\n\n";
+		cout << "Apakah Anda Yakin Membeli Semua Game Ini? (Y/N) : ";pil=getch();
 		
-
-
-
-
-void lihatHistory(){
-	//aku gapaham ubah data array ke struct
+		if(pil == 'Y' || pil == 'y') {
+			//akan terjadi dequeue ketika history mencapai 10
+			if(historyCount > 10) {
+				Node_3 *temp = *BACK;
+				while(temp->next->next != NULL){
+					temp = temp->next;
+				}
+				temp->next = NULL;
+				historyCount--;
+			}
+			//enqueue
+			Node_3 *newNode = new Node_3;	
+			time_t now = time(0);
+			newNode->data.idPembelian="BUY-"+to_string(now);
+			newNode->data.userName=userName;
+			newNode->data.tanggalBeli=timeNow();
+			newNode->data.totalHarga=totalBayar;
+			newNode->next = NULL;
+			
+			newNode->next = *BACK;
+			if(*BACK == NULL) {//kalau linked list kosong
+				*BACK = newNode;
+			} else {//kalau linked list sudah terisi
+				newNode->next = *BACK;
+				*BACK = newNode;
+			}
+			historyCount++;
+			repeat = false;	
+		} else if(pil == 'N' || pil == 'n') {
+			repeat = false;
+			menuUser(userName);
+		} else {
+			continue;
+		}
+	}
 }
+
+
+
+void lihatHistory(Node_3 *FRONT){
+	if (FRONT == NULL) {
+		cout << "\nData Masih Kosong !! " << endl << endl;
+		return;
+	} else {
+		cout << "\nData Game : " << endl;
+		while ( FRONT != NULL ) {
+			cout << "\n\nID Pembelian	: " << FRONT->data.idPembelian << endl;
+			cout << "Username	: " << FRONT->data.userName << endl;
+			cout << "Tanggal Beli	: " << FRONT->data.tanggalBeli << endl;
+			cout << "Harga		: " << FRONT->data.totalHarga << endl;
+			FRONT = FRONT->next;
+		}
+	}
+}
+
+
+void shellSort( Game *games, int &arrSize, string orderItem, string orderMethod ) {
+	Game temp;
+	for ( int gap = arrSize/2; gap > 0; gap /= 2 ) {
+		for ( int i = gap; i < arrSize; i += 1 ) {
+			temp = games[i];
+			int j;
+			//ASC			
+			if( orderItem == "1" && orderMethod == "1" ){
+				for ( j = i; j >= gap &&  games[j-gap].harga > temp.harga; j -= gap ) {
+					games[j] = games[j - gap];
+				}
+			} else if( orderItem == "2" && orderMethod == "1" ){
+				for ( j = i; j >= gap &&  games[j-gap].tanggalRilis > temp.tanggalRilis; j -= gap ) {
+					games[j] = games[j - gap];
+				}
+			} else if( orderItem == "3" && orderMethod == "1" ){
+				for ( j = i; j >= gap &&  games[j-gap].namaGame > temp.namaGame; j -= gap ) {
+					games[j] = games[j - gap];
+				}
+			} else if( orderItem == "4" && orderMethod == "1" ){
+				for ( j = i; j >= gap &&  games[j-gap].ID > temp.ID; j -= gap ) {
+					games[j] = games[j - gap];
+				}
+			} 
+			//DESC
+			if( orderItem == "1" && orderMethod == "2" ){
+				for ( j = i; j >= gap &&  games[j-gap].harga < temp.harga; j -= gap ) {
+					games[j] = games[j - gap];
+				}
+			} else if( orderItem == "2" && orderMethod == "2" ){
+				for ( j = i; j >= gap &&  games[j-gap].tanggalRilis < temp.tanggalRilis; j -= gap ) {
+					games[j] = games[j - gap];
+				}
+			} else if( orderItem == "3" && orderMethod == "2" ){
+				for ( j = i; j >= gap &&  games[j-gap].namaGame < temp.namaGame; j -= gap ) {
+					games[j] = games[j - gap];
+				}
+			} 
+			games[j] = temp;
+		}
+	}
+} 
+
+int jumpSearch(Game *arr, string x, int n) {
+	int step = sqrt(n);
+	int prev = 0;
+	while (arr[min(step, n)-1].ID < x) {
+		prev = step;
+		step += sqrt(n);
+	if (prev >= n) return -1;
+	}
+	while (arr[prev].ID < x) {
+		prev++;
+		if (prev == min(step, n))
+		return -1;
+	}
+	if (arr[prev].ID == x) return prev;
+	return -1;
+}
+
+
 
 //taroh paling bawah aja ga penting	
 void hubungiAdmin() {
@@ -823,5 +1085,4 @@ void hubungiAdmin() {
 	cout<<"Admin 2: 2009106xxx   ||   +62 8xx xxxx xxxx   ||   Muhammad Daffa Putra Mahardika\n";
 	cout<<"Admin 3: 2009106050   ||   +62 821 5831 7722   ||   Risky Kurniawan\n\n\n";
 }
-
 

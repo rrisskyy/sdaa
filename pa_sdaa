@@ -7,11 +7,16 @@
 
 using namespace std;
 
-struct Account {
-	
-	string _id, userName, nama, pass, email;
+
+struct Keranjang {
+	string selectedGame;
 };
 
+struct Account {
+	string _id, userName, nama, pass, email;
+	string isiKeranjang[100];
+	int jumlahKeranjang;
+};
 struct Node_1 {
 	struct Account data;
 	struct Node_1 *next;	
@@ -25,6 +30,7 @@ struct Game{
 	int rating, stok, harga;
 };
 
+
 //ini array sementara untuk nyimpan data gamenya, jadi ini nanti di convert dari array ke linked list
 Game games[100];
 
@@ -37,19 +43,32 @@ struct Node_2 {
 
 Node_2 *TOP = NULL, *END = NULL, *del_2;
 
+struct History {
+	string ID, nama, tanggalBeli;
+	int totalHarga;
+};
+
+struct Node_3 {
+	struct History data;
+	struct Node_2 *next;
+	struct Node_2 *prev;
+};
+
+Node_3 *FRONT = NULL, *del_3;
+
 int accountCount = 0;
 int gameCount = 0;
 
 
 
 
-
+void hubungiAdmin();
 void csvToList(Node_2 **TOP, Node_2 **END, int &gameCount);
 void convertArrToList(Node_2 **TOP, Game games);
 
 void auth(struct Node_1 *head, string userName, string pass);
 void menuLogin();
-void menuUser();
+void menuUser(string userName, string pass);
 void menuAdmin();
 
 void dataGame();
@@ -61,9 +80,15 @@ void *hapusDataUser(Node_1 *head, Node_1 *tail, string selectedID);
 void ubahDataUser( Node_1 *head, string selectedID );
 
 void lihatDataGame(Node_2 *TOP);
+void lihatDataSatuGame( Node_2 *TOP, string SelectedID );
 void addDataGamefirst(Node_2 **TOP, Node_2 **END, int &gameCount);
+void ubahDataGame(Node_2 *TOP, string SelectedID);
+Node_2 *hapusDataGame(Node_2 *TOP, Node_2 *END, string SelectedID);
 
-
+//user
+void lihatKeranjang(Node_1 *head, Node_2 *TOP, string userName);
+void tambahKeranjang(Node_1 *head, Node_2 *TOP, string userName);
+void hapusIsiKeranjang (Node_1 *head, Node_2 *TOP, string userName);
 
 int main() {
 	//masukkan data csv ke linked list
@@ -218,14 +243,13 @@ void menuLogin() {
 	} while (pil != "0");
 		
 }
-
-void menuUser() {
+//menggunakan parameter username untuk mengetahui siapa yg login
+void menuUser(string userName) {
 	string pil;
+	system("cls");
 	do{
-		system("cls");
-		int userName, pass;
 		string pil;
-		cout<<"\n\n==================== HAI USER ==================\n\n";
+		cout<<"\n\n==================== HAI " << userName << " ==================\n\n";
 		cout<<"1. Lihat Daftar Game"<<endl;
 		cout<<"2. Cari Daftar Game"<<endl;
 		cout<<"3. Lihat Keranjang"<<endl;
@@ -236,21 +260,22 @@ void menuUser() {
 		cout<<"8. Log Out"<<endl;
 		cout<<"\nPilih Menu >> ";pil = getch();
 		if (pil == "1") {
-			
+			lihatDataGame(TOP);
 		} else if (pil == "2") {
 			
 		} else if (pil == "3") {
-			
+			lihatKeranjang(head, TOP, userName);
 		} else if (pil == "4") {
-			
+			tambahKeranjang(head, TOP, userName);
 		} else if (pil == "5") {
-			
+			hapusIsiKeranjang(head, TOP, userName);
 		} else if (pil == "6") {
 				
 		} else if (pil == "7") {
-			
+			hubungiAdmin();
 		} else if (pil == "8") {
-			return;
+			userName="";
+			menuLogin();
 		} else {
 			continue;
 		}
@@ -288,7 +313,7 @@ void menuAdmin() {
 		
 }
 void dataGame() {
-	string pil;
+	string pil, SelectedID;
 	do{
 		cout<<"\n\n==================== DATA GAME ==================\n\n";
 		cout<<"1. Lihat Data Game"<<endl;
@@ -304,9 +329,15 @@ void dataGame() {
 		} else if (pil ==  "2") {
 			addDataGamefirst(&TOP, &END, gameCount);
 		} else if (pil ==  "3") {
-			
+			lihatDataGame(TOP);
+			cout<<"\n\n Masukkan ID game yang ingin anda ubah:   ";
+			cin>>SelectedID;
+			ubahDataGame(TOP, SelectedID);	
 		} else if (pil ==  "4") {
-			
+			lihatDataGame(TOP);
+			cout<<"\n\n Masukkan ID game yang ingin anda hapus:   ";
+			cin>>SelectedID;
+			TOP = hapusDataGame(TOP, END, SelectedID);
 		} else if (pil ==  "5") {
 			
 		} else if (pil ==  "6") {
@@ -373,12 +404,13 @@ void auth(struct Node_1 *head, string userName, string pass) {
 		menuAdmin();
 	} else {
 		if(head == NULL) {
-			cout<<"\n\n\nLinked List masih kosong!\n\n\n"; 	
+			cout<<"\n\n\nUser Tidak Ada!\n\n\n"; 	
 		}
 		while (head != NULL) {	
-			if (head->data.nama == userName && head->data.pass == pass) {
-				menuUser();
+			if (head->data.userName == userName && head->data.pass == pass) {
+				menuUser(userName);
 			}
+			head = head->next;
 		}
 	}
 	
@@ -438,12 +470,15 @@ void ubahDataUser( Node_1 *head, string selectedID ) {
 	        	if(pil == '1') {
 	        		cout<<"\n\nMasukkan Nama Baru  :  " ;	fflush(stdin);getline(cin,nodeBaru->data.nama);	
 	        		repeat = false;
+	        		cout << "\n\nBerhasil!!!\n\n\n\n" << endl;
 				} else if (pil == '2') {
 					cout<<"\n\nMasukkan Password Baru :  "; 	cin>>nodeBaru->data.pass;	
 					repeat = false;
+					cout << "\n\nBerhasil!!!\n\n\n\n" << endl;
 				} else if (pil == '3') {
-					cout<<"\n\nMasukkan Alamat Baru :  "; 	cin>>nodeBaru->data.pass;
+					cout<<"\n\nMasukkan Email Baru :  "; 	cin>>nodeBaru->data.email;
 					repeat = false;	
+					cout << "\n\nBerhasil!!!\n\n\n\n" << endl;
 				} else {
 					continue;
 				}
@@ -451,7 +486,7 @@ void ubahDataUser( Node_1 *head, string selectedID ) {
         }        
 		nodeBaru = nodeBaru -> next;
 	}
-	cout << "\n\nBerhasil!!!\n\n\n\n" << endl;
+	
 }
 
 
@@ -506,7 +541,24 @@ void lihatDataGame(Node_2 *TOP){
 	}
 }
 
-
+void lihatDataSatuGame( Node_2 *TOP, string selectedID ) {
+	if (TOP == NULL) {
+		cout << "\nData Masih Kosong !!\n\n ";
+		return;
+	} else {
+		while ( TOP != NULL ) {
+			if (TOP->data.ID == selectedID) {
+				cout << "\n\nID		: " << TOP->data.ID << endl;
+				cout << "Nama Game  	: " << TOP->data.namaGame << endl;
+				cout << "Tanggal Rilis	: " << TOP->data.tanggalRilis << endl;
+				cout << "Rating		: " << TOP->data.rating << endl;
+				cout << "Stok		: " << TOP->data.stok << endl;
+				cout << "Harga		: " << TOP->data.harga << endl;
+			}
+			TOP = TOP->next;
+		}
+	}
+}
 
 // fungsi untuk mendaftarkan game baru
 void addDataGamefirst(Node_2 **TOP, Node_2 **END, int &gameCount) {
@@ -558,15 +610,217 @@ void addDataGamefirst(Node_2 **TOP, Node_2 **END, int &gameCount) {
 	
 }
 
-
 void ubahDataGame(Node_2 *TOP, string selectedID) {
-	
+	Node_2 *nodeBaru = new Node_2();
+    
+	nodeBaru = TOP;
+	while (nodeBaru != NULL) {
+		char pil;
+		bool repeat = true;
+        if (nodeBaru->data.ID == selectedID) {
+        	do {
+        		system("cls");
+        		lihatDataSatuGame(TOP, selectedID);
+        		cout << "\n\n+==============================+" << endl;
+	        	cout << "1. Ubah Nama"<<endl;
+	        	cout << "2. Ubah Tanggal Rilis"<<endl;
+	        	cout << "3. Ubah Rating"<<endl;
+	        	cout << "4. Ubah Stok"<<endl;
+	        	cout << "5. Ubah Harga"<<endl;
+	        	cout << "\nPilih Menu: ";pil = getch();
+	        	if(pil == '1') { 
+	        		cout<<"\n\nMasukkan Nama Game Baru  :  " ;	fflush(stdin);getline(cin,nodeBaru->data.namaGame);	
+	        		repeat = false;
+	        		cout << "\n\nBerhasil!!!\n\n\n\n" << endl;
+				} else if (pil == '2') {
+					cout<<"\n\nMasukkan Tanggal Rilis Baru :  "; fflush(stdin);getline(cin,nodeBaru->data.tanggalRilis);	
+					repeat = false;
+					cout << "\n\nBerhasil!!!\n\n\n\n" << endl;
+				} else if (pil == '3') {
+					cout<<"\n\nMasukkan Rating Baru :  "; 	cin>>nodeBaru->data.rating;
+					repeat = false;
+					cout << "\n\nBerhasil!!!\n\n\n\n" << endl;
+				} else if (pil == '4') {
+					cout<<"\n\nMasukkan Stok Baru :  "; 	cin>>nodeBaru->data.stok;
+					repeat = false;
+					cout << "\n\nBerhasil!!!\n\n\n\n" << endl;
+				} else if (pil == '5') {
+					cout<<"\n\nMasukkan Harga Baru :  "; 	cin>>nodeBaru->data.harga;
+					repeat = false;
+					cout << "\n\nBerhasil!!!\n\n\n\n" << endl;
+				} else {
+					continue;
+				}
+			} while(repeat);
+        }        
+		nodeBaru = nodeBaru -> next;
+	}
 }
 
-void *hapusDataUser(Node_2 *TOP, Node_2 *END, string SelectedID){
+//Fungsi Hapus game bertipe data struct jadi ini kembaliannya nanti berupa Struct.
+Node_2 *hapusDataGame(Node_2 *TOP, Node_2 *END, string SelectedID){
+	//Buat Struct temp untuk perulangan nanti
+	Node_2 *temp;
+	if (TOP == NULL) {
+		cout << "Game Tidak ada!!" << endl;
+ 	}
 	
+	//	di logika didalam while itu kita tidak bisa menghapus elemen pertama, karena 
+	//	dari awal itu sudah mengecek data ke 2, jadi bisa diakali dengan menambah 1 kondisi
+	//	dimana headnya itu sama dengan pil, kalau sama langsung hapus
+	//  trus setelah dihapus, di kembalikan structnya. (yang sudah dihapus elemennya)
+	if (TOP->data.ID == SelectedID) {		
+		//karena ini Posisi TOP nya adalah elemen yang mau dihapus, jadi langsung arahkan saja TOPnya ke alamat selanjutnya
+        TOP = TOP->next;
+        TOP->prev = NULL;
+        //free kita menghemat memory karena del_2 sudah tidak terpakai, fungsinya sama seperti delete
+        free(del_2);  
+        return TOP;
+    }
+    //masukkan nilai dari TOP ke temp
+    temp = TOP;
+    //Ulangi sampai next dari temp itu NULL
+    while (temp -> next != NULL) {
+    	// kalau dalam perulangan itu alamat selanjutnya memiliki data.ID yang mau kita hapus
+        if (temp->next->data.ID == SelectedID) {
+        	//del_2 nya itu menyimpan dari alamat next variable temp
+        	//misalnya saat ini berada di alamat pertama, maka del_2 menyimpan alamat kedua:
+            del_2 = temp -> next;
+            //setelah itu alamat next dari temp itu menyimpan alamat next dari variable del
+            //misalnya saat ini berada di alamat pertama, maka yang seharusnya temp->next itu menyimpan alamat kedua, jadi menyimpan alamat ketiga
+            temp->next = del_2->next;
+            //free kita menghemat memory karena del_2 sudah tidak terpakai, fungsinya sama seperti delete
+            free(del_2);
+            return TOP;
+        }
+        temp = temp->next;
+    }
+    return TOP;
 }
-	
 
+//void sortirDataGame
+
+//void cariDataGame
+
+
+void lihatKeranjang( Node_1 *head,  Node_2 *TOP, string userName) {
+	cout<<"\n";
+	if (TOP == NULL) {
+		cout << "Keranjang Kosong!!" << endl;
+ 	}
+	//buat variabel temp yang nilainya sampa dengan TOP karena kita akan menggunakan variabel TOP
+	//ketika variabel TOP digunakan, nilainya akan berubah ubah sesuai alur dari linked list
+	//jadi yang tercetak itu elemen list yang berada di alamat selanjutnya, 
+	//karena elemen list yang terletak sebelum TOP tidak akan terbaca,
+	//jadi triknya, buat variabel temp, trus kalau elemen sudah ketemu, kita kembalikan TOP tadi ke semula (nilai semulanya disimpan di temp)
+	//jadi karena TOP tadi kembali ke alamat awal, jadi tidak masalah dimanapun alamat yang mau dicetak
+	Node_2 *temp;
+	temp = TOP;
+	while (head != NULL) {	
+		//kita memilih ini user mana yang punya keranjangnya
+		if (head->data.userName == userName) {
+			//kita ngecek keranjangnya satu per satu pakai perulangan
+			for(int i = 0; i < head->data.jumlahKeranjang; i++){
+				//kita lakukan perulangan selama TOP nya itu tidak NULL alias sampai data masih ada
+				while(TOP != NULL) {
+					//disini kita ngecek, apakah data yang ada di isi keranjang index ke-i itu sama dengan data game yang berada di top
+					//kalau sama, kita print data tersebut, trus karna kita menggunakan TOP untuk looping, kita kembalikan alamatnya ke semula
+					if(head->data.isiKeranjang[i] == TOP->data.ID) {
+						lihatDataSatuGame(TOP, TOP->data.ID);
+						TOP = temp;
+						//ini kita break untuk menghemat memory, karena kalau sudah ketemu, data selanjutnya itu ga mungkin ada yg sama
+						break;
+					} else {
+						//kalau masih belum ketemu kita next
+						TOP = TOP->next;		
+					}
+				}
+			}
+		//ini kita break untuk menghemat memory, karena kalau sudah ketemu, data selanjutnya itu ga mungkin ada yg sama			
+		break;
+		}
+		head = head->next;	
+		
+	}
+}
+
+void tambahKeranjang( Node_1 *head, Node_2 *TOP, string userName ) {
+	while (head != NULL) {
+		//kita memilih ini user mana yang punya keranjangnya	
+		if (head->data.userName == userName) {
+			string selectedID;
+			//print dulu data gamenya baru suruh user masukkan ke keranjang
+			lihatDataGame(TOP);
+			cout<<"\n\nMasukkan ID Game >>>  ";
+			cin>>selectedID;	
+			//nah kita masukkan data inputan tadi kedalam array keranjang
+			head->data.isiKeranjang[head->data.jumlahKeranjang] = selectedID;
+			//karna isi keranjangnya bertambah, kita tambah juga ini
+			head->data.jumlahKeranjang++;			
+			break;
+		}
+		head = head->next;	
+		
+	}
+}
+
+void hapusIsiKeranjang( Node_1 *head, Node_2 *TOP, string userName ) {
+	while (head != NULL) {
+		if (head->data.userName == userName) {
+			string selectedID;
+			//print dulu keranjangnya supaya user bisa milih
+			lihatKeranjang(head, TOP, userName);
+			cout<<"\n\nMasukkan ID Game >>>  ";
+			cin>>selectedID;	
+			for (int i = 0; i < head->data.jumlahKeranjang++; i++) {
+				//kalau data yang dihapus itu ada didalam array
+				if (head->data.isiKeranjang[i] == selectedID){
+					//kita timpa elemen yang mau kita hapus dengan elemen selanjutnya
+					//lanjut terus begitu sampai index tarakhir
+					head->data.isiKeranjang[i] = head->data.isiKeranjang[i+1];
+					break;
+				}
+			}
+			cout<<"\n\nBerhasil!!! ";
+			break;
+		}
+		head = head->next;	
+	}
+}
+
+void checkout() {
+	//cout << "\n\n Apakah Anda Yakin Membeli Game Ini?"
+		//while (head != NULL) {
+		//kita memilih ini user mana yang punya keranjangnya	
+		//if (head->data.userName == userName) {
+			//string selectedID;
+			//print dulu data gamenya baru suruh user masukkan ke keranjang
+			//lihatKeranjang(head, TOP, userName);
+			//cout<<"\n\nYa/Tidak >>>  ";	
+			//kita masukkan data dari array keranjang ke data history
+			//FRONT->data->data.isiKeranjang[head->data.jumlahKeranjang] = selectedID;
+			//karna isi keranjangnya bertambah, kita tambah juga ini
+			//head->data.jumlahKeranjang++;			
+			//break;
+		//} else {
+			//kalau masih belum ketemu kita next
+			//head = head->next;	
+		}
+		
+
+
+
+void lihatHistory(){
+	//aku gapaham ubah data array ke struct
+}
+
+//taroh paling bawah aja ga penting	
+void hubungiAdmin() {
+	system("cls");
+	cout<<"\n\n\n\n\n\n";
+	cout<<"Admin 1: 2009106xxx   ||   +62 8xx xxxx xxxx   ||   Riska Nurliyanti\n";
+	cout<<"Admin 2: 2009106xxx   ||   +62 8xx xxxx xxxx   ||   Muhammad Daffa Putra Mahardika\n";
+	cout<<"Admin 3: 2009106050   ||   +62 821 5831 7722   ||   Risky Kurniawan\n\n\n";
+}
 
 

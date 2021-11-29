@@ -56,7 +56,7 @@ struct Node_3 {
 	struct Node_3 *next;
 };
 
-Node_3 *FRONT = NULL, *BACK = NULL, *del_3;
+Node_3 *FRONT = NULL, *REAR = NULL, *del_3;
 
 int accountCount = 0;
 int gameCount = 0;
@@ -100,7 +100,7 @@ void tambahKeranjang(Node_1 *head, Node_2 *TOP, string userName);
 void hapusIsiKeranjang (Node_1 *head, Node_2 *TOP, string userName);
 void checkout( Node_1 *head, Node_2 *TOP, Node_3 **FRONT, string userName );
 void lihatHistory(Node_3 *FRONT);
-
+Node_3 *hapusDataHistory(Node_3 *FRONT, Node_3 *REAR);
 
 
 int main() {
@@ -295,6 +295,7 @@ void menuLogin() {
 //menggunakan parameter username untuk mengetahui siapa yg login
 void menuUser(string userName) {
 	string pil;
+	string SelectedID;
 	system("cls");
 	do{
 		string pil;
@@ -311,7 +312,18 @@ void menuUser(string userName) {
 		if (pil == "1") {
 			lihatDataGame(TOP);
 		} else if (pil == "2") {
+			cout<<" \n\n== Search Berdasarkan ID Barang ==\n\n "<<endl;
+			cout<<"\n\n Masukkan ID game yang ingin anda cari:   ";
+			cin>>SelectedID;
 			
+			convertListToArr(&TOP, &games[0]);
+			shellSort(&games[0], gameCount, "4", "1");	
+			int res = jumpSearch(&games[0], SelectedID, gameCount);
+			lihatDataSatuGameArr( &games[res] );
+			TOP=NULL;
+			for (int i = 0; i < gameCount; i++){
+				convertArrToList(&TOP, games[i]);
+			};
 		} else if (pil == "3") {
 			lihatKeranjang(head, TOP, userName);
 		} else if (pil == "4") {
@@ -319,11 +331,12 @@ void menuUser(string userName) {
 		} else if (pil == "5") {
 			hapusIsiKeranjang(head, TOP, userName);
 		} else if (pil == "6") {
+			lihatKeranjang(head, TOP, userName);	
 			checkout(head, TOP, &FRONT, userName);
+			head->data.jumlahKeranjang=0;
 		} else if (pil == "7") {
 			hubungiAdmin();
 		} else if (pil == "8") {
-			userName="";
 			menuLogin();
 		} else {
 			continue;
@@ -488,7 +501,7 @@ void dataHistory() {
 		if (pil ==  "1") {
 			lihatHistory(FRONT);
 		} else if (pil ==  "2") {
-			
+			FRONT = hapusDataHistory(FRONT, REAR);
 		} else {
 			continue;
 		}
@@ -830,8 +843,6 @@ Node_2 *hapusDataGame(Node_2 *TOP, Node_2 *END, string SelectedID){
 }
 
 
-//void cariDataGame
-
 
 void lihatKeranjang( Node_1 *head,  Node_2 *TOP, string userName) {
 	cout<<"\n";
@@ -890,13 +901,17 @@ void tambahKeranjang( Node_1 *head, Node_2 *TOP, string userName ) {
 			//karna isi keranjangnya bertambah, kita tambah juga ini
 			while (TOP != NULL) {
 				if (TOP->data.ID == selectedID){
-					head->data.isiKeranjang[head->data.jumlahKeranjang] = selectedID;
-					head->data.jumlahKeranjang++;
+					if(TOP->data.stok > 0 ) {
+						head->data.isiKeranjang[head->data.jumlahKeranjang] = selectedID;
+						head->data.jumlahKeranjang++;
+					} else if (TOP->data.stok == 0){
+						cout<<"\n\nSTOK tidak tersedia!!\n\n";
+					}
 				} TOP = TOP->next;	
 			}
 			break;
 		}
-		head = head->next;	
+		head = head->next;
 		
 	}
 }
@@ -932,7 +947,7 @@ void hapusIsiKeranjang( Node_1 *head, Node_2 *TOP, string userName ) {
 
 
 
-void checkout( Node_1 *head, Node_2 *TOP, Node_3 **BACK, string userName ) {
+void checkout( Node_1 *head, Node_2 *TOP, Node_3 **FRONT, string userName ) {
 	char pil;
 	bool repeat=true;
 	int totalBayar;
@@ -940,10 +955,13 @@ void checkout( Node_1 *head, Node_2 *TOP, Node_3 **BACK, string userName ) {
 	temp = TOP;
 	while (head != NULL) {	
 		if (head->data.userName == userName) {
+			if (head->data.jumlahKeranjang == 0) {
+				cout << "\nData Masih Kosong !! " << endl << endl;
+				return;
+			}
 			for(int i = 0; i < head->data.jumlahKeranjang; i++){
 				while(TOP != NULL) {
 					if(head->data.isiKeranjang[i] == TOP->data.ID) {
-						lihatKeranjang(head, TOP, userName);
 						totalBayar += TOP->data.harga;
 						TOP->data.stok--;
 						TOP = temp;
@@ -959,33 +977,37 @@ void checkout( Node_1 *head, Node_2 *TOP, Node_3 **BACK, string userName ) {
 		cout<<"\n\n\nJumlah yang perlu anda bayarkan untuk semua game ini adalah: Rp."<<totalBayar<<"\n\n\n";
 		cout << "Apakah Anda Yakin Membeli Semua Game Ini? (Y/N) : ";pil=getch();
 		
-		if(pil == 'Y' || pil == 'y') {
+		if(pil == 'Y' || pil == 'y') {						
 			//akan terjadi dequeue ketika history mencapai 10
-			if(historyCount > 10) {
-				Node_3 *temp = *BACK;
-				while(temp->next->next != NULL){
-					temp = temp->next;
-				}
-				temp->next = NULL;
+			if(historyCount > 3) {
+				Node_3 *temp = *FRONT;	
+				*FRONT = temp->next;
+				if (*FRONT == NULL) REAR = NULL;
 				historyCount--;
+				delete (temp);
 			}
-			//enqueue
-			Node_3 *newNode = new Node_3;	
-			time_t now = time(0);
-			newNode->data.idPembelian="BUY-"+to_string(now);
-			newNode->data.userName=userName;
-			newNode->data.tanggalBeli=timeNow();
-			newNode->data.totalHarga=totalBayar;
-			newNode->next = NULL;
 			
-			newNode->next = *BACK;
-			if(*BACK == NULL) {//kalau linked list kosong
-				*BACK = newNode;
-			} else {//kalau linked list sudah terisi
-				newNode->next = *BACK;
-				*BACK = newNode;
+			//enqueue
+			time_t now = time(0);
+			Node_3 *newNode 			= new Node_3;
+			newNode->data.idPembelian	= "BUY-"+to_string(now);
+			newNode->data.userName		= userName;
+			newNode->data.tanggalBeli	= timeNow();
+			newNode->data.totalHarga	= totalBayar;
+			newNode->next				= NULL;
+			
+			
+			if(*FRONT == NULL) {//kalau linked list kosong
+				REAR = *FRONT = newNode;
+			} else {
+				REAR->next = newNode;	
+				REAR = newNode;
 			}
-			historyCount++;
+			
+			historyCount++;			
+		
+		
+		
 			repeat = false;	
 		} else if(pil == 'N' || pil == 'n') {
 			repeat = false;
@@ -1000,7 +1022,7 @@ void checkout( Node_1 *head, Node_2 *TOP, Node_3 **BACK, string userName ) {
 
 void lihatHistory(Node_3 *FRONT){
 	if (FRONT == NULL) {
-		cout << "\nData Masih Kosong !! " << endl << endl;
+		cout<<"\n\n\nTidak ada transaksi!\n\n\n"; 
 		return;
 	} else {
 		cout << "\nData Game : " << endl;
@@ -1013,6 +1035,22 @@ void lihatHistory(Node_3 *FRONT){
 		}
 	}
 }
+
+Node_3 *hapusDataHistory(Node_3 *FRONT, Node_3 *REAR){
+	//Buat Struct temp untuk perulangan nanti
+//	Node_3 *temp;
+//	temp = FRONT;
+	if (FRONT == NULL) {
+		cout<<"\n\n\nTidak ada transaksi!\n\n\n"; 
+ 	}
+    while (FRONT != NULL) {
+        del_3 = FRONT;
+        FRONT = FRONT->next;
+        free(del_3);
+    }
+    return FRONT;
+}
+
 
 
 void shellSort( Game *games, int &arrSize, string orderItem, string orderMethod ) {
@@ -1081,8 +1119,7 @@ int jumpSearch(Game *arr, string x, int n) {
 void hubungiAdmin() {
 	system("cls");
 	cout<<"\n\n\n\n\n\n";
-	cout<<"Admin 1: 2009106xxx   ||   +62 8xx xxxx xxxx   ||   Riska Nurliyanti\n";
-	cout<<"Admin 2: 2009106xxx   ||   +62 8xx xxxx xxxx   ||   Muhammad Daffa Putra Mahardika\n";
-	cout<<"Admin 3: 2009106050   ||   +62 821 5831 7722   ||   Risky Kurniawan\n\n\n";
+	cout<<"Admin 1: 2009106017   ||   +62 852-4883-2218   ||   Riska Nurliyanti\n";
+	cout<<"Admin 2: 2009106036   ||   +62 822-5126-6939   ||   Muhammad Daffa Putra Mahardika\n";
+	cout<<"Admin 3: 2009106050   ||   +62 821-5831-7722   ||   Risky Kurniawan\n\n\n";
 }
-
